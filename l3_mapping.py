@@ -33,18 +33,37 @@ class FeatureProcessor:
 
     def get_features(self, id):
         """ Get the keypoints and the descriptors for features for the image with index id."""
-        raise NotImplementedError('Implement get_features!')
+        # raise NotImplementedError('Implement get_features!')
+        img = self.get_image(id)
+        return self.orb.detectAndCompute(img, None)
+
 
     def append_matches(self, matches, new_kp):
         """ Take the current matches and the current keypoints
         and append them to the list of consistent match locations. """
-        raise NotImplementedError('Implement append_matches!')
+        # raise NotImplementedError('Implement append_matches!')
+
+        for match in matches:
+            
 
     def get_matches(self):
         """ Get all of the locations of features matches for each image to the features found in the
         first image. Output should be a numpy array of shape (num_images, num_features_first_image, 2), where
         the actual data is the locations of each feature in each image."""
-        raise NotImplementedError('Implement get_matches!')
+        # raise NotImplementedError('Implement get_matches!')
+        kp1, des1 = self.get_features(0)
+
+        for id in range(self.num_images):
+            kp, des = self.get_features(id)    
+
+            matches = self.bf.match(des, des1)
+            
+            self.append_matches(matches, kp)
+                
+            
+            # self.features['kp'].append(kp)
+            # self.features['kp'].append(kp)
+        
 
     
 

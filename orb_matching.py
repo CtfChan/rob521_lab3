@@ -16,6 +16,11 @@ orb = cv.ORB_create()
 kp1, des1 = orb.detectAndCompute(img1,None)
 kp2, des2 = orb.detectAndCompute(img2,None)
 
+print("kp1")
+print(kp1[0].pt)
+
+
+
 # create BFMatcher object
 bf = cv.BFMatcher(cv.NORM_HAMMING, crossCheck=True)
 
@@ -25,6 +30,10 @@ matches = bf.match(des1,des2)
 # Sort them in the order of their distance.
 matches = sorted(matches, key = lambda x:x.distance)
 print("length of matches: ", len(matches))
+print(dir(matches[0]))
+print(matches[0].imgIdx)
+print(matches[0].queryIdx)
+print(matches[0].trainIdx)
 
 
 # Draw all matches.
