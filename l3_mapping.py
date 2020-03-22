@@ -75,6 +75,10 @@ def triangulate(feature_data, tf, inv_K):
     You're free to use whatever method you like, but we recommend a solution based on least squares, similar
     to section 7.1 of Szeliski's book "Computer Vision: Algorithms and Applications". """
 
+    # use cv2.triangulatePoints
+    # don't be a try hard
+    # https://programtalk.com/python-examples/cv2.triangulatePoints.T/
+
     raise NotImplementedError('Implement triangulate!')
 
 def main():
