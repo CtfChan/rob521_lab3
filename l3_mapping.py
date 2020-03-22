@@ -78,7 +78,7 @@ def triangulate(feature_data, tf, inv_K):
     # use cv2.triangulatePoints
     # don't be a try hard
     # https://programtalk.com/python-examples/cv2.triangulatePoints.T/
-
+    # https://pythonpath.wordpress.com/2012/08/29/cv2-triangulatepoints/
     raise NotImplementedError('Implement triangulate!')
 
 def main():
