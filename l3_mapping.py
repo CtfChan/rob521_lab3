@@ -119,7 +119,7 @@ def triangulate(feature_data, tf, inv_K):
     return p.squeeze()
 
 def main():
-    min_feature_views = 20  # minimum number of images a feature must be seen in to be considered useful
+    min_feature_views = 25  # minimum number of images a feature must be seen in to be considered useful
     K = np.array([[530.4669406576809, 0.0, 320.5],  # K from sim
                   [0.0, 530.4669406576809, 240.5],
                   [0.0, 0.0, 1.0]])
