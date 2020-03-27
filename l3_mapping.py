@@ -28,7 +28,7 @@ class FeatureProcessor:
     def get_image(self, id):
         #Load image and convert to grayscale
         img = cv2.imread(os.path.join(self.data_folder,'camera_image_{}.jpeg'.format(id)))
-        gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         return gray
 
     def get_features(self, id):
@@ -65,7 +65,6 @@ class FeatureProcessor:
         self.features['des'] = des1
 
         # iterate through all images and match with first
-        #TODO reject features based on distance
         for img_num in range(self.num_images):
             kp, des = self.get_features(img_num)    
             matches = self.bf.match(des, self.features['des'])
@@ -93,8 +92,35 @@ def triangulate(feature_data, tf, inv_K):
     You're free to use whatever method you like, but we recommend a solution based on least squares, similar
     to section 7.1 of Szeliski's book "Computer Vision: Algorithms and Applications". """
 
-    raise NotImplementedError('Implement triangulate!')
+    # raise NotImplementedError('Implement triangulate!')
 
+    n_features, _ = feature_data.shape
+
+    left_sum = np.zeros((3,3))
+    right_sum = np.zeros((3,1))
+    for j in range(n_features):
+        pt_x, pt_y = feature_data[j][0], feature_data[j][1]
+        if pt_x < 0 or pt_y < 0:
+            print("Invalid point, skipping ...")
+            continue
+        
+        # follow notation from text
+        x_j = np.array([pt_x, pt_y, 1.0])
+        C_j = tf[j][:3, :3]
+        v_j = C_j @ inv_K @ x_j
+        v_j = v_j / np.linalg.norm(v_j)
+
+        c_j = (tf[j][:3, 3]).reshape((3,1)) # this is optical center
+        
+        print("blah")
+        print((np.identity(3) - (v_j @ v_j.T)).shape)
+        print(c_j.shape)
+        left_sum += np.identity(3) - (v_j @ v_j.T)
+        right_sum +=  (np.identity(3) - (v_j @ v_j.T)) @ c_j
+
+    p = np.linalg.inv(left_sum) @ right_sum
+
+    return p.squeeze()
 
 def main():
     min_feature_views = 20  # minimum number of images a feature must be seen in to be considered useful
@@ -126,9 +152,9 @@ def main():
     num_landmarks = np.sum(valid_features)
     good_feature_locations = feature_locations[:, valid_features, :] 
     
-    print(num_features)
-    print(num_landmarks)
-    print(good_feature_locations.shape)
+    # print(num_features)
+    # print(num_landmarks)
+    # print(good_feature_locations.shape)
 
     pc = np.zeros((num_landmarks, 3))
 
@@ -136,9 +162,9 @@ def main():
     tf = sio.loadmat("l3_mapping_data/tf.mat")['tf']
     tf_fixed = np.linalg.inv(tf[0, :, :]).dot(tf).transpose((1, 0, 2))
 
-    print(tf)
-    print(dir(tf))
-    print(tf_fixed)
+    # print(tf)
+    # print(dir(tf))
+    # print(tf_fixed)
 
     for i in range(num_landmarks):
         # YOUR CODE HERE!! You need to populate good_feature_locations after you reject bad features!
