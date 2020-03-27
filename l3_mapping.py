@@ -43,28 +43,46 @@ class FeatureProcessor:
         and append them to the list of consistent match locations. """
         # raise NotImplementedError('Implement append_matches!')
 
-        for match in matches:
-            
+        # for match in matches:
+
 
     def get_matches(self):
         """ Get all of the locations of features matches for each image to the features found in the
         first image. Output should be a numpy array of shape (num_images, num_features_first_image, 2), where
         the actual data is the locations of each feature in each image."""
-        # raise NotImplementedError('Implement get_matches!')
+        # initialize output
+        self.feature_match_locs = -1 * np.ones((self.num_images, self.n_features, 2))
+
+        # get features from first img, fill in self.features
         kp1, des1 = self.get_features(0)
 
-        for id in range(self.num_images):
-            kp, des = self.get_features(id)    
+        self.features['kp'] = kp1
+        img_num = 0
+        for feature_num, kp in enumerate(kp1):
+            self.features['kp_np'].append(kp.pt)
+            self.feature_match_locs[img_num, feature_num, 0] = kp.pt[0]
+            self.feature_match_locs[img_num, feature_num, 1] = kp.pt[1]
+        self.features['des'] = des1
 
-            matches = self.bf.match(des, des1)
+        # iterate through all images and match with first
+        #TODO reject features based on distance
+        for img_num in range(self.num_images):
+            kp, des = self.get_features(img_num)    
+            matches = self.bf.match(des, self.features['des'])
             
-            self.append_matches(matches, kp)
-                
-            
-            # self.features['kp'].append(kp)
-            # self.features['kp'].append(kp)
-        
+            avg_dist = sum(m.distance for m in matches) / len(matches)
 
+            for match in matches:
+                if match.distance > 1.2*avg_dist:
+                    continue
+                train_feature_num = match.trainIdx
+                query_feature_num = match.queryIdx
+                self.feature_match_locs[img_num, train_feature_num, 0] = \
+                    kp[query_feature_num].pt[0]
+                self.feature_match_locs[img_num, train_feature_num, 1] = \
+                    kp[query_feature_num].pt[1]
+
+        return self.feature_match_locs
     
 
 
@@ -75,11 +93,8 @@ def triangulate(feature_data, tf, inv_K):
     You're free to use whatever method you like, but we recommend a solution based on least squares, similar
     to section 7.1 of Szeliski's book "Computer Vision: Algorithms and Applications". """
 
-    # use cv2.triangulatePoints
-    # don't be a try hard
-    # https://programtalk.com/python-examples/cv2.triangulatePoints.T/
-    # https://pythonpath.wordpress.com/2012/08/29/cv2-triangulatepoints/
     raise NotImplementedError('Implement triangulate!')
+
 
 def main():
     min_feature_views = 20  # minimum number of images a feature must be seen in to be considered useful
@@ -94,15 +109,37 @@ def main():
     feature_locations = f_processor.get_matches()  # output shape should be (num_images, num_features, 2)
 
     # feature rejection
-    raise NotImplementedError('(Optionally) implement feature rejection! (though we strongly recommend it)')
-    good_feature_locations = None  # delete this!
-    num_landmarks = 0  # delete this!
+    # raise NotImplementedError('(Optionally) implement feature rejection! (though we strongly recommend it)')
+    # good_feature_locations = None  # delete this!
+    # num_landmarks = 0  # delete this!
+
+    # features that appear in less than min_feature_views imgs should be removed
+    num_images, num_features, _ = feature_locations.shape
+    feature_count = np.zeros(num_features)
+    for img_num in range(num_images):
+        for feature_num in range(num_features):
+            if feature_locations[img_num, feature_num, 0] > -1 and\
+               feature_locations[img_num, feature_num, 1] > -1:
+               feature_count[feature_num] += 1
+    valid_features = feature_count > min_feature_views # bool np array of valid features
+
+    num_landmarks = np.sum(valid_features)
+    good_feature_locations = feature_locations[:, valid_features, :] 
+    
+    print(num_features)
+    print(num_landmarks)
+    print(good_feature_locations.shape)
 
     pc = np.zeros((num_landmarks, 3))
 
     # create point cloud map of features
     tf = sio.loadmat("l3_mapping_data/tf.mat")['tf']
     tf_fixed = np.linalg.inv(tf[0, :, :]).dot(tf).transpose((1, 0, 2))
+
+    print(tf)
+    print(dir(tf))
+    print(tf_fixed)
+
     for i in range(num_landmarks):
         # YOUR CODE HERE!! You need to populate good_feature_locations after you reject bad features!
         pc[i] = triangulate(good_feature_locations[:, i, :], tf_fixed, inv_K)
