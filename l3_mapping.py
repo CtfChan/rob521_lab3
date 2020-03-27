@@ -96,8 +96,8 @@ def triangulate(feature_data, tf, inv_K):
 
     n_features, _ = feature_data.shape
 
-    left_sum = np.zeros((3,3))
-    right_sum = np.zeros((3,1))
+    left_sum = np.zeros((3,3), dtype=np.float64)
+    right_sum = np.zeros((3,1), dtype=np.float64)
     for j in range(n_features):
         pt_x, pt_y = feature_data[j][0], feature_data[j][1]
         if pt_x < 0 or pt_y < 0:
@@ -105,16 +105,12 @@ def triangulate(feature_data, tf, inv_K):
             continue
         
         # follow notation from text
-        x_j = np.array([pt_x, pt_y, 1.0])
+        x_j = np.array([pt_x, pt_y, 1.0]).reshape((3,1))
         C_j = tf[j][:3, :3]
         v_j = C_j @ inv_K @ x_j
         v_j = v_j / np.linalg.norm(v_j)
 
         c_j = (tf[j][:3, 3]).reshape((3,1)) # this is optical center
-        
-        print("blah")
-        print((np.identity(3) - (v_j @ v_j.T)).shape)
-        print(c_j.shape)
         left_sum += np.identity(3) - (v_j @ v_j.T)
         right_sum +=  (np.identity(3) - (v_j @ v_j.T)) @ c_j
 
